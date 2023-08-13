@@ -3,7 +3,8 @@ const startTrackingBtn = document.getElementById("startTracking");
 const tableContainer = document.getElementById("tableContainer");
 let allWeek;
 let shareXmlData;
-let hide;
+let downloadLink = null;
+let resp = null;
 
 // Function to format date as YYYY-MM-DD
 function formatDate(date) {
@@ -63,7 +64,6 @@ function displayLoading() {
 // Function to fetch weather data and display the table
 async function fetchWeatherData(start_date, end_date) {
   displayLoading();
-  hide = true;
   const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&timezone=America/New_York&daily=temperature_2m_max,temperature_2m_min&start_date=${start_date}&end_date=${end_date}`;
 
   try {
@@ -72,7 +72,20 @@ async function fetchWeatherData(start_date, end_date) {
       throw new Error("API Error");
     }
     const data = await response.json();
+    resp = data;
     displayWeatherTable(data);
+
+    // Hide the chart and "Download XML" button
+    const temperatureChart = document.getElementById("temperatureChart");
+    while (temperatureChart.firstChild) {
+      temperatureChart.removeChild(temperatureChart.firstChild);
+    }
+
+    if (downloadLink) {
+      downloadLink.remove();
+      downloadLink = null;
+    }
+    shareXmlData = null;
   } catch (error) {
     displayErrorMessage();
   }
@@ -171,7 +184,6 @@ function displayErrorMessage() {
 
 // Event listener for Start Tracking button
 startTrackingBtn.addEventListener("click", () => {
-  console.log("find obj", allWeek[weekSelect.value]);
   const { startDate, endDate } = allWeek[weekSelect.value];
   fetchWeatherData(startDate, endDate);
 });
@@ -201,6 +213,10 @@ function generateXML(data) {
 }
 
 generateXmlBtn.addEventListener("click", (event) => {
+  if (downloadLink) {
+    downloadLink.remove();
+    downloadLink = null;
+  }
   event.preventDefault(); // Prevent the default behavior
   const tableRows = document.querySelectorAll("#tableContainer tbody tr");
   const xmlData = Array.from(tableRows).map((row) => {
@@ -213,20 +229,27 @@ generateXmlBtn.addEventListener("click", (event) => {
   // Create a Blob with the XML content
   const blob = new Blob([xml], { type: "text/xml" });
 
-  // Create a download link
-  const downloadLink = document.createElement("a");
-  downloadLink.href = URL.createObjectURL(blob);
-  downloadLink.download = "temperature_data.xml";
-  downloadLink.textContent = "Download XML";
-
-  // Append the download link to the page
-  document.body.appendChild(downloadLink);
+  // If the download link doesn't exist, create and append it
+  if (!downloadLink) {
+    downloadLink = document.createElement("a");
+    downloadLink.id = "downloadXmlData";
+    downloadLink.href = URL.createObjectURL(blob);
+    downloadLink.download = "temperature_data.xml";
+    downloadLink.textContent = "Download XML";
+    document.body.appendChild(downloadLink);
+  } else {
+    // Update the download link properties
+    downloadLink.href = URL.createObjectURL(blob);
+  }
 });
 
-console.log("XML Data 1", shareXmlData);
 $(document).ready(function () {
   $("#showBarChart").click(function (e) {
     e.preventDefault();
+
+    if (!shareXmlData && resp) {
+      generateXmlBtn.click();
+    }
     // XML data
     var xmlData = shareXmlData;
     if (!xmlData) {
