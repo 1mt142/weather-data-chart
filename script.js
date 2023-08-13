@@ -68,9 +68,16 @@ async function fetchWeatherData(start_date, end_date) {
 
   try {
     const response = await fetch(apiUrl);
+
+    if (response.status === 400) {
+      const errorData = await response.json();
+      alert(errorData.reason);
+    }
+
     if (!response.ok) {
       throw new Error("API Error");
     }
+
     const data = await response.json();
     resp = data;
     displayWeatherTable(data);
