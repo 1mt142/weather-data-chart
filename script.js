@@ -3,6 +3,7 @@ const startTrackingBtn = document.getElementById("startTracking");
 const tableContainer = document.getElementById("tableContainer");
 let allWeek;
 let shareXmlData;
+let hide;
 
 // Function to format date as YYYY-MM-DD
 function formatDate(date) {
@@ -62,6 +63,7 @@ function displayLoading() {
 // Function to fetch weather data and display the table
 async function fetchWeatherData(start_date, end_date) {
   displayLoading();
+  hide = true;
   const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&timezone=America/New_York&daily=temperature_2m_max,temperature_2m_min&start_date=${start_date}&end_date=${end_date}`;
 
   try {
@@ -197,37 +199,6 @@ function generateXML(data) {
 
   return xmlString;
 }
-/*
-// Event listener for Generate XML button
-generateXmlBtn.addEventListener("click", () => {
-  const tableRows = document.querySelectorAll("#tableContainer tbody tr");
-  const xmlData = Array.from(tableRows).map((row) => {
-    const cells = row.querySelectorAll("td");
-    return Array.from(cells).map((cell) => cell.textContent);
-  });
-
-  const xml = generateXML(xmlData);
-  
-  // Create a Blob with XML content
-  const blob = new Blob([xml], { type: "text/xml" });
-
-  // Create a URL for the Blob
-  const url = URL.createObjectURL(blob);
-
-  // Create a link to download the Blob
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "temperature_data.xml";
-
-  // Click the link to initiate download
-  a.click();
-
-  // Clean up
-  URL.revokeObjectURL(url);
-  fs.writeFileSync("temperature_data.xml", xml);
-  alert("XML file saved in the root directory.");
-});
-*/
 
 generateXmlBtn.addEventListener("click", (event) => {
   event.preventDefault(); // Prevent the default behavior
@@ -253,3 +224,45 @@ generateXmlBtn.addEventListener("click", (event) => {
 });
 
 console.log("XML Data 1", shareXmlData);
+$(document).ready(function () {
+  $("#showBarChart").click(function (e) {
+    e.preventDefault();
+    // XML data
+    var xmlData = shareXmlData;
+    if (!xmlData) {
+    }
+
+    // Parse the XML data
+    var xmlDoc = $.parseXML(xmlData);
+    var $xml = $(xmlDoc);
+
+    // Extract temperature data
+    var temperatureData = [];
+    $xml.find("temperature").each(function () {
+      var day = $(this).find("day").text();
+      var min = parseFloat($(this).find("min").text());
+      var max = parseFloat($(this).find("max").text());
+      temperatureData.push({ day: day, min: min, max: max });
+    });
+
+    // Generate the chart using div elements
+    var chartContainer = $("#temperatureChart");
+    chartContainer.empty();
+
+    $.each(temperatureData, function (index, data) {
+      var minBarHeight = (data.min - 0) * 10;
+      var maxBarHeight = (data.max - 0) * 10;
+
+      var minChartBar = $('<div class="bar min-bar"></div>');
+      minChartBar.css("height", minBarHeight + "px");
+      minChartBar.append('<span class="bar-label">' + data.min + "°C</span>");
+      chartContainer.append(minChartBar);
+
+      var maxChartBar = $('<div class="bar max-bar"></div>');
+      maxChartBar.css("height", maxBarHeight + "px");
+      maxChartBar.append('<span class="bar-label">' + data.max + "°C</span>");
+      maxChartBar.append('<span class="day-label">' + data.day + "</span>");
+      chartContainer.append(maxChartBar);
+    });
+  });
+});
