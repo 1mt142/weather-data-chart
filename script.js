@@ -237,7 +237,7 @@ generateXmlBtn.addEventListener("click", (event) => {
   const blob = new Blob([xml], { type: "text/xml" });
 
   // If the download link doesn't exist, create and append it
-  if (!downloadLink) {
+  if (!downloadLink && resp) {
     downloadLink = document.createElement("a");
     downloadLink.id = "downloadXmlData";
     downloadLink.href = URL.createObjectURL(blob);
