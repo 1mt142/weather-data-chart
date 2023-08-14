@@ -279,6 +279,9 @@ $(document).ready(function () {
     var chartContainer = $("#temperatureChart");
     chartContainer.empty();
 
+    var legend = $("#legend");
+    legend.empty();
+
     $.each(temperatureData, function (index, data) {
       var minBarHeight = (data.min - 0) * 10;
       var maxBarHeight = (data.max - 0) * 10;
@@ -294,5 +297,10 @@ $(document).ready(function () {
       maxChartBar.append('<span class="day-label">' + data.day + "</span>");
       chartContainer.append(maxChartBar);
     });
+
+    var barMinMax = $(
+      `<div class="min-max-bar">Green represents Minimum Temperature,Red represents Maximum Temperature</div>`
+    );
+    legend.append(barMinMax);
   });
 });
